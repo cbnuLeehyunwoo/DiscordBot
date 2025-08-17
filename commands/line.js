@@ -40,8 +40,8 @@ module.exports = {
         
         const embed = new EmbedBuilder()
             .setColor(0x0099FF)
-            .setTitle('🎲 라인 배정 준비')
-            .setDescription('아래 버튼을 눌러 포함할 라인을 선택한 후, `배정 시작`을 눌러주세요!')
+            .setTitle('🪜 라인 사다리타기')
+            .setDescription('아래 버튼을 눌러 포함할 라인을 선택한 후, \'배정 시작!\'을 눌러주세요! 라인을 선택하지 않고 배정하면 모든 라인이 고려됩니다!')
             .addFields(
                 { name: '👥 참가자', value: playerNames },
                 { name: '📋 선택된 라인', value: '아직 없음' }
@@ -49,7 +49,7 @@ module.exports = {
 
         const buildRows = () => {
             const laneMap = { top: '탑', jungle: '정글', mid: '미드', adc: '원딜', support: '서폿' };
-            const emojiMap = { top: '⚔️', jungle: '🌳', mid: '🧙', adc: '🏹', support: '🛡️' };
+            const emojiMap = { top: '⚔️', jungle: '🌳', mid: '🧙', adc: '🥄', support: '🛠️' };
             
             const row1 = new ActionRowBuilder();
             Object.keys(laneMap).forEach(key => {
@@ -82,7 +82,7 @@ module.exports = {
                 return i.reply({ content: '명령어를 실행한 유저만 시작/초기화할 수 있습니다.', ephemeral: true });
             }
 
-            const laneMap = { top: '⚔️ 탑', jungle: '🌳 정글', mid: '🧙 미드', adc: '🏹 원딜', support: '🛡️ 서폿' };
+            const laneMap = { top: '⚔️ 탑', jungle: '🌳 정글', mid: '🧙 미드', adc: '🥄 원딜', support: '🛠️ 서폿' };
 
             if (Object.keys(laneMap).includes(i.customId)) {
                 const laneName = laneMap[i.customId];
