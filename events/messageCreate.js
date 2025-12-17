@@ -1,4 +1,7 @@
 const { Events } = require('discord.js');
+// 1. [추가] 실제 연결 상태를 확인하기 위해 가져옵니다.
+const { getVoiceConnection } = require('@discordjs/voice'); 
+
 const champions = require('../num2champ.json');
 const championInfoHandler = require('../champion.js');
 const dialogueMap = require('../dialogues.json');
@@ -13,17 +16,15 @@ const clearCommand = require('../commands/clear.js');
 module.exports = {
     name: Events.MessageCreate,
     async execute(message) {
-        // 1. 봇이 보낸 메시지는 무시
         if (message.author.bot) return;
 
-        // 2. 고정 명령어 처리 (!설정, !입장, !퇴장)
+        // --- 명령어 처리 ---
         if (message.content === '!설정') {
             await ttsSetting.execute(message);
             return;
         }
 
         if (message.content === '!입장' || message.content === '!퇴장') {
-            // !입장, !퇴장 뒤의 명령어 텍스트를 제거하고 '입장' or '퇴장'만 넘김
             await connectionCmd.execute(message, null, message.content.substring(1));
             return;
         }
@@ -32,25 +33,33 @@ module.exports = {
         const isCommand = fullContent.startsWith('!');
 
         // ----------------------------------------------------
-        // ⭐️ 3. 자동 TTS 로직 (명령어가 아닐 때만 실행)
+        // ⭐️ 3. 자동 TTS 로직 수정됨 ⭐️
         // ----------------------------------------------------
-        // 봇이 해당 서버에서 TTS 모드이고 + 명령어가 아니라면 읽어줍니다.
-        const isTTSActive = message.client.ttsStatus && message.client.ttsStatus[message.guild.id];
         
-        if (!isCommand && isTTSActive) {
-            // A. 타겟 유저 확인 (설정된 유저만 읽기)
+        // [수정] 메모리 변수(ttsStatus) 대신 "실제로 연결되어 있는지" 확인합니다.
+        // 이렇게 하면 봇이 재부팅되어도 연결만 유지되면 계속 읽어줍니다.
+        const connection = getVoiceConnection(message.guild.id);
+        
+        // 연결이 되어 있고 + 명령어가 아니라면 읽기 시도
+        if (connection && !isCommand) {
+            
+            // A. 타겟 유저 확인
             const targetUsers = message.client.ttsTargetUsers?.[message.guild.id];
             
-            // 타겟 리스트가 존재하는데, 말한 사람이 리스트에 없다면 무시
+            // 타겟 리스트가 '설정된 적이 있는데', 말한 사람이 리스트에 없다면 무시
             if (targetUsers && !targetUsers.includes(message.author.id)) {
                 return; 
             }
+            
+            // (만약 타겟 설정이 아예 없으면 -> 모두 읽거나, 아무도 안 읽게 정책 결정)
+            // 여기서는 "타겟 설정이 없으면 모두 읽음"으로 동작합니다. 
+            // 만약 "설정 안 하면 안 읽게" 하려면 아래 주석을 해제하세요.
+            // if (!targetUsers) return; 
 
-            // B. 글자수 제한 (너무 긴 도배 방지)
+            // B. 글자수 제한
             if (fullContent.length > 50) return; 
 
-            // C. 목소리 타입 확인 (저장된 설정이 없으면 'female' 기본값)
-            // (EdgeTTS를 쓰기로 했으므로 'female' or 'male'이 넘어갑니다)
+            // C. 목소리 타입 가져오기 (기본값 female)
             const voiceType = message.client.ttsVoiceType?.[message.guild.id] || 'female';
 
             // D. 재생
@@ -59,34 +68,27 @@ module.exports = {
         }
 
         // ----------------------------------------------------
-        // ⭐️ 4. 명령어 처리 로직 (!로 시작하는 경우)
+        // 4. 명령어 처리 로직
         // ----------------------------------------------------
-        if (!isCommand) return; // 명령어도 아니고 TTS 대상도 아니면 여기서 끝
+        if (!isCommand) return; 
 
-        // 접두사(!) 제거 및 파싱
         const contentWithoutPrefix = fullContent.slice(1).trim();
         const args = contentWithoutPrefix.split(/ +/);
-        const commandName = args.shift().toLowerCase(); // 첫 단어를 명령어로 인식
-        const normalizedContent = contentWithoutPrefix.toLowerCase(); // 전체 문장 소문자화 (대사 검색용)
+        const commandName = args.shift().toLowerCase();
+        const normalizedContent = contentWithoutPrefix.toLowerCase();
 
-        // A. 청소 명령어 (!청소 10 or !clear 10)
         if (commandName === '청소' || commandName === 'clear') {
             await clearCommand.execute(message, args);
             return;
         }
 
-        // B. 대사 MP3 재생 (!아리, !가렌 등 dialogues.json에 있는 키워드)
         if (dialogueMap[normalizedContent]) {
             await playDialogue.execute(message, dialogueMap[normalizedContent]);
             return;
         }
         
-        // C. 챔피언 정보 및 기타 명령어 (!가렌, !garen)
-        // normalizedContent는 "!가렌" 전체, commandName은 "가렌"만 해당
-        // 챔피언 데이터에 키가 있는지 확인
         if (champions[normalizedContent] || champions[commandName]) {
              try { 
-                 // 챔피언 정보 핸들러 호출
                  await championInfoHandler(message, champions[normalizedContent] ? normalizedContent : commandName); 
              } catch (error) { 
                  console.error('챔피언 정보 에러:', error); 
