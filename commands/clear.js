@@ -3,10 +3,10 @@ const { PermissionsBitField } = require('discord.js');
 
 module.exports = {
     async execute(message, args) {
-        // 1. 권한 확인: 명령어를 쓴 사람이 '메시지 관리' 권한이 있는지 체크
-        if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
-            return message.reply('🧹 메시지를 청소할 권한이 없어요!');
-        }
+
+
+
+
 
         // 2. 개수 확인: !청소 뒤에 숫자를 적었는지 확인
         // args[0]은 명령어 뒤의 첫 번째 단어입니다.
