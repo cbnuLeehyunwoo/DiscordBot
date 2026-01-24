@@ -13,7 +13,7 @@ module.exports = {
         // 2. [수정됨] 국적(언어) 선택 메뉴 (최대 25개 꽉 채움, 설명 제거)
         const langSelect = new StringSelectMenuBuilder()
             .setCustomId('select_tts_lang')
-            .setPlaceholder('목소리의 국적을 선택하세요 (인기 25개국)')
+            .setPlaceholder('목소리의 국적을 선택하세요')
             .addOptions([
                 { label: '🇰🇷 한국어', value: 'ko' },
                 { label: '🇺🇸 영어', value: 'en' },
