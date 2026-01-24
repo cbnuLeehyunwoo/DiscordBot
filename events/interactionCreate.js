@@ -3,37 +3,50 @@ const { Events } = require('discord.js');
 module.exports = {
     name: Events.InteractionCreate,
     async execute(interaction) {
-        // 유저 선택 메뉴가 아니면 무시
-        if (!interaction.isUserSelectMenu()) return;
-
-        // 설정한 ID인지 확인
-        if (interaction.customId === 'select_tts_users') {
-            
-            // 1. 선택된 유저들의 ID 리스트를 가져옵니다.
+        // --- A. 유저 선택 처리 (기존 코드 유지) ---
+        if (interaction.isUserSelectMenu() && interaction.customId === 'select_tts_users') {
             const selectedUserIds = interaction.values;
-
-            // ---------------------------------------------------------
-            // [수정됨] ID 리스트를 이용해 유저 닉네임 가져오기
-            // ---------------------------------------------------------
             const names = selectedUserIds.map(id => {
-                // interaction.members에는 선택된 유저의 정보가 담겨있습니다.
                 const member = interaction.members.get(id);
-                // 닉네임(displayName)이 있으면 그걸 쓰고, 없으면 기본값 처리
                 return member ? member.displayName : '알 수 없는 유저';
-            }).join(', '); // 쉼표로 연결 (예: "철수, 영희")
+            }).join(', ');
 
-
-            // 2. 봇 메모리에 저장합니다. (서버별로 따로 관리)
             interaction.client.ttsTargetUsers = interaction.client.ttsTargetUsers || {};
             interaction.client.ttsTargetUsers[interaction.guildId] = selectedUserIds;
 
-            // 3. 확인 메시지 보내기 (이름 리스트 출력)
             await interaction.update({
-                content: `✅ 설정 완료! 이제 **${names}** 님의 채팅만 읽어드립니다.\n(다시 바꾸려면 '!설정'을 입력하세요)`,
-                components: [] // 메뉴 제거
+                content: `✅ 읽어줄 사람이 **${names}** 님으로 변경되었습니다!`,
+                components: []
             });
-            
-            console.log(`TTS 타겟 변경됨 (서버: ${interaction.guildId}):`, selectedUserIds);
+            return;
+        }
+
+        // --- B. [추가됨] 국적(언어) 선택 처리 ---
+        if (interaction.isStringSelectMenu() && interaction.customId === 'select_tts_lang') {
+            const selectedLang = interaction.values[0];
+
+            // 봇 메모리에 언어 설정 저장 (기본값은 'ko')
+            interaction.client.ttsLanguage = interaction.client.ttsLanguage || {};
+            interaction.client.ttsLanguage[interaction.guildId] = selectedLang;
+
+            // 보기 좋게 이름 매핑
+            const langNames = {
+                'ko': '🇰🇷 한국어', 'en': '🇺🇸 영어', 'ja': '🇯🇵 일본어',
+                'zh-CN': '🇨🇳 중국어', 'zh-TW': '🇹🇼 대만어', 'es': '🇪🇸 스페인어',
+                'fr': '🇫🇷 프랑스어', 'de': '🇩🇪 독일어', 'ru': '🇷🇺 러시아어',
+                'it': '🇮🇹 이탈리아어', 'pt': '🇵🇹 포르투갈어', 'vi': '🇻🇳 베트남어',
+                'th': '🇹🇭 태국어', 'id': '🇮🇩 인도네시아어', 'hi': '🇮🇳 힌디어',
+                'ar': '🇸🇦 아랍어', 'nl': '🇳🇱 네덜란드어', 'tr': '🇹🇷 터키어',
+                'pl': '🇵🇱 폴란드어', 'sv': '🇸🇪 스웨덴어', 'fi': '🇫🇮 핀란드어',
+                'el': '🇬🇷 그리스어', 'uk': '🇺🇦 우크라이나어', 'cs': '🇨🇿 체코어',
+                'da': '🇩🇰 덴마크어'
+            };
+            const langLabel = langNames[selectedLang] || selectedLang;
+
+            await interaction.update({
+                content: `✅ 목소리 국적이 **${langLabel}** 로 변경되었습니다!`,
+                components: []
+            });
         }
     },
 };

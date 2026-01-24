@@ -7,9 +7,9 @@ const dialogueMap = require('../dialogues.json');
 
 const playDialogue = require('../commands/playdialogue.js'); 
 const connectionCmd = require('../commands/connection.js');
-const playTTS = require('../utils/ttsPlayer.js'); 
 const ttsSetting = require('../commands/ttsSetting.js'); 
 const clearCommand = require('../commands/clear.js'); 
+const playTTS = require('../utils/ttsPlayer.js'); // TTS 플레이어 (중복 선언 제거함)
 
 module.exports = {
     name: Events.MessageCreate,
@@ -49,8 +49,13 @@ module.exports = {
             // 글자수 제한
             if (fullContent.length > 50) return; 
 
-            // 큐에 추가 (이제 여기서 playTTS만 부르면 알아서 줄 서서 나옵니다)
-            await playTTS(message.guild.id, fullContent);
+            // ---------------------------------------------------------
+            // [변경점] 설정된 국적 가져오기 (없으면 'ko' 한국어 기본)
+            // ---------------------------------------------------------
+            const currentLang = message.client.ttsLanguage?.[message.guild.id] || 'ko';
+
+            // 큐에 추가 (텍스트와 언어를 같이 넘김)
+            await playTTS(message.guild.id, fullContent, currentLang);
             return;
         }
 
